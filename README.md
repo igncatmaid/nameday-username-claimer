@@ -19,10 +19,7 @@ This script automates the process of checking the availability of a Minecraft us
 
 1. Clone or download this repository to your local machine.
 2. Ensure you have Python 3.7 or higher installed.
-3. Install the required libraries using pip(or run `install.bat`):
-    ```bash
-    pip install -r requirements.txt
-    ```
+3. Install the required libraries using `install.bat`):
 4. Configure your settings in the `config.json` file (details below).
 
 ## Configuration
