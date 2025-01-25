@@ -1,4 +1,4 @@
-## Minecraft Username Claim Script
+## Nameday Username Claimer
 
 This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (e.g., on the day when unmigrated accounts are deleted).
 
@@ -13,13 +13,13 @@ This script automates the process of checking the availability of a Minecraft us
 ## Requirements
 
 - Python 3.7 or higher
-- `requests` library (can be installed via `pip install requests`)
+- `requests` library (can be installed using `install.bat`)
 
 ## Installation
 
 1. Clone or download this repository to your local machine.
 2. Ensure you have Python 3.7 or higher installed.
-3. Install the required libraries using pip:
+3. Install the required libraries using pip(or run `install.bat`):
     ```bash
     pip install -r requirements.txt
     ```
