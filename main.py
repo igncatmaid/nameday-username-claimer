@@ -56,7 +56,8 @@ def authenticate_account(email, password, webhook_url, user_id, username):
     if isinstance(auth_result, dict):  # Successful login
         message = (
             f"Successfully authenticated with username `{username}`!\n"
-            f"Access Token: `{auth_result['access_token']}`\n"
+            f"Bearer Token (Access Token): `{auth_result['access_token']}`\n"
+            f"Learn more about Minecraft Bearer Tokens here: <https://bearer.wiki>\n"
             f"UUID: `{auth_result['uuid']}`"
         )
         print(message)
@@ -142,7 +143,7 @@ def main():
     delay = config.get("delay", 5)  # Default delay of 5 seconds
     message_group_size = config.get("message_group_size", 3)  # Default message group size of 3
 
-    if not webhook_url or not user_id or not username or not email or not password:
+    if not webhook_url or not user_id or not username or not email or not password or not message_group_size:
         print("Error: Missing required configuration in config.json")
         return
 
