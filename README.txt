@@ -1,9 +1,9 @@
 # Minecraft Username Claim Script
 
-This script is intended for the day when unmigrated accounts are deleted and usernames are freed.
-This script automates the process of checking the availability of a Minecraft username and Claiming it.
+This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (e.g., on the day when unmigrated accounts are deleted).
 
 ## Features
+
 - Check if a Minecraft username is available.
 - Authenticate using Microsoft credentials (requires the `MsAuth` module).
 - Claim the username if it's available.
@@ -11,6 +11,7 @@ This script automates the process of checking the availability of a Minecraft us
 - Configurable delay and message grouping for notifications.
 
 ## Requirements
+
 - Python 3.7 or higher
 - `requests` library (can be installed via `pip install requests`)
 
@@ -20,13 +21,14 @@ This script automates the process of checking the availability of a Minecraft us
 2. Ensure you have Python 3.7 or higher installed.
 3. Install the required libraries using pip:
     ```bash
-    pip install requests
+    pip install -r requirements.txt
     ```
 4. Configure your settings in the `config.json` file (details below).
 
 ## Configuration
 
 Create or update the `config.json` file with the following content:
+
 ```json
 {
   "webhook_url": "YOUR_DISCORD_WEBHOOK_URL",
