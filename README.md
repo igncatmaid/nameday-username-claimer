@@ -1,6 +1,6 @@
 ## Nameday Username Claimer
 
-This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (e.g., on the day when unmigrated accounts are deleted).
+This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (on the day when unmigrated accounts are deleted).
 
 ## Features
 
