@@ -1,0 +1,10 @@
+{
+  "webhook_url": "YOUR_DISCORD_WEBHOOK_URL",
+  "user_id": "YOUR_DISCORD_USER_ID",
+  "username": "desired_minecraft_username",
+  "email": "your_microsoft_email",
+  "password": "your_microsoft_password",
+  "delay": 5,
+  "message_group_size": 3
+}
+

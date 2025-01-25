@@ -1,0 +1,3 @@
+echo Starting the Script...
+python main.py
+pause
