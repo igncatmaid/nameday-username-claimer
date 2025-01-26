@@ -1,152 +1,167 @@
 import time
 import requests
 import json
-from MsAuth import login  # Importing the login function from MsAuth.py
 from datetime import datetime
+from typing import Dict, Any, Callable
+from MsAuth import login
 
-
-# Load configuration from a file
+# Constants
 CONFIG_FILE = "config.json"
-def load_config():
-    with open(CONFIG_FILE, "r") as file:
-        return json.load(file)
+MOJANG_API_BASE = "https://api.mojang.com"
+MINECRAFT_API_BASE = "https://api.minecraftservices.com"
+DEFAULT_DELAY = 5
+DEFAULT_MESSAGE_GROUP_SIZE = 3
 
-def save_config(config):
-    with open(CONFIG_FILE, "w") as file:
-        json.dump(config, file, indent=4)
+# Type aliases
+ConfigType = Dict[str, Any]
+StatusHandler = Callable[[], bool]
 
-# Check username availability
-def is_username_available(username):
-    url = f"https://api.mojang.com/users/profiles/minecraft/{username}"
-    response = requests.get(url)
-    
-    status_map = {
-        429: "ratelimited",
-        204: True,
-        404: True,
-        200: False
-    }
-    
-    return status_map.get(response.status_code, "error")
+class MinecraftSniper:
+    def __init__(self, config: ConfigType):
+        self.webhook_url = config["webhook_url"]
+        self.user_id = config["user_id"]
+        self.username = config["username"]
+        self.email = config["email"]
+        self.password = config["password"]
+        self.delay = config.get("delay", DEFAULT_DELAY)
+        self.message_group_size = config.get("message_group_size", DEFAULT_MESSAGE_GROUP_SIZE)
+        self.count_taken = 0
 
-def send_discord_notification(webhook_url, message, user_id=None):
-    if user_id:
-        message = f"<@{user_id}> {message}"
-    
-    payload = {
-        "content": message,
-    }
-    headers = {
-        "Content-Type": "application/json",
-    }
-    response = requests.post(webhook_url, data=json.dumps(payload), headers=headers)
-    if response.status_code == 204:
-        print(f"Successfully sent notification: {message}")
-    else:
-        print(f"Failed to send notification: {response.status_code}, {response.text}")
+    @staticmethod
+    def load_config() -> ConfigType:
+        try:
+            with open(CONFIG_FILE, "r") as file:
+                return json.load(file)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Configuration file {CONFIG_FILE} not found")
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON in {CONFIG_FILE}")
 
+    def send_discord_notification(self, message: str, mention_user: bool = False) -> None:
+        if mention_user:
+            message = f"<@{self.user_id}> {message}"
 
-# Attempt authentication using the custom login
-def authenticate_account(email, password, webhook_url, user_id, username):
-    auth_result = login(email, password)  # Call the login function from MsAuth.py
-    
-    if isinstance(auth_result, dict):  # Successful login
-        message = (
-            f"Successfully authenticated with username `{username}`!\n"
-            f"Bearer Token (Access Token): `{auth_result['access_token']}`\n"
-            f"Learn more about Minecraft Bearer Tokens here: <https://bearer.wiki>\n"
-            f"UUID: `{auth_result['uuid']}`"
-        )
-        print(message)
-        send_discord_notification(webhook_url, user_id, message)
-        # Proceed to claim the username
-        claim_username(username, auth_result['access_token'], webhook_url, user_id)
-        return True  # Authentication successful, stop the loop
-    else:
-        message = f"Authentication failed for `{username}`: {auth_result}"
-        print(message)
-        send_discord_notification(webhook_url, user_id, message)
-        return False  # Authentication failed
+        payload = {"content": message}
+        headers = {"Content-Type": "application/json"}
 
-# Claim the username using the access token
-# Modify the claim_username function to log the response body
-def claim_username(username, access_token, webhook_url, user_id):
-    url = 'https://api.minecraftservices.com/minecraft/profile/name/' + username
-    headers = {
-        'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json',
-    }
+        try:
+            response = requests.post(
+                self.webhook_url,
+                data=json.dumps(payload),
+                headers=headers
+            )
+            if response.status_code != 204:
+                print(f"Failed to send notification: {response.status_code}, {response.text}")
+        except requests.RequestException as e:
+            print(f"Error sending Discord notification: {e}")
 
-    status_messages = {
-        200: lambda: f"Successfully claimed the username `{username}`!",
-        400: lambda: f"Failed to claim the username `{username}`. Error: {response.json().get('errorMessage', 'Invalid request')}",
-        401: lambda: f"Failed to claim the username `{username}`. Error: Unauthorized (invalid access token).",
-        403: lambda: f"Failed to claim the username `{username}`. Error: Forbidden (username already taken or cooldown period).",
-        404: lambda: f"Failed to claim the username `{username}`. Error: Account does not own Minecraft.",
-        405: lambda: f"Failed to claim the username `{username}`. Error: Method not allowed (use PUT).",
-        429: lambda: f"Failed to claim the username `{username}`. Error: Too many requests (rate limit exceeded).",
-        500: lambda: f"Failed to claim the username `{username}`. Error: Internal server error."
-    }
+    def check_username_availability(self) -> str:
+        url = f"{MOJANG_API_BASE}/users/profiles/minecraft/{self.username}"
+        
+        try:
+            response = requests.get(url)
+            status_map = {
+                429: "ratelimited",
+                204: "available",
+                404: "available",
+                200: "taken"
+            }
+            return status_map.get(response.status_code, "error")
+        except requests.RequestException:
+            return "error"
 
-    try:
-        response = requests.put(url, headers=headers)
-        message = status_messages.get(
-            response.status_code,
-            lambda: f"Failed to claim the username `{username}`. Error: Unexpected error (Status Code: {response.status_code})."
-        )()
-        print(message)
-        send_discord_notification(webhook_url, user_id, message)
-    except requests.exceptions.RequestException as error:
-        message = f"Error claiming username `{username}`: {error}"
-        print(message)
-        send_discord_notification(webhook_url, user_id, message)
-
-
-# Main function
-def main():
-    config = load_config()
-
-    webhook_url = config.get("webhook_url")
-    user_id = config.get("user_id")
-    username = config.get("username")
-    email = config.get("email")
-    password = config.get("password")
-    delay = config.get("delay", 5)  # Default delay of 5 seconds
-    message_group_size = config.get("message_group_size", 3)  # Default message group size of 3
-
-    if not webhook_url or not user_id or not username or not email or not password or not message_group_size:
-        print("Error: Missing required configuration in config.json")
-        return
-
-    count_taken = 0
-    status_handlers = {
-        "ratelimited": lambda: send_discord_notification(webhook_url, f"`[{timestamp}]` Rate limited by Mojang API. Please wait before continuing."),
-        "error": lambda: send_discord_notification(webhook_url, f"`[{timestamp}]` Error occurred while checking the username `{username}`."),
-        True: lambda: authenticate_and_break(email, password, webhook_url, user_id, username),
-        False: lambda: handle_taken_username(count_taken, message_group_size, webhook_url, username, timestamp)
-    }
-
-    def authenticate_and_break(email, password, webhook_url, user_id, username):
-        send_discord_notification(webhook_url, user_id, f"`[{timestamp}]` The username `{username}` is available! Attempting authentication...")
-        return authenticate_account(email, password, webhook_url, user_id, username)
-
-    def handle_taken_username(count, group_size, webhook_url, username, timestamp):
-        nonlocal count_taken
-        count_taken += 1
-        if count_taken % group_size == 0:
-            send_discord_notification(webhook_url, f"`[{timestamp}]` The username `{username}` is already taken.`{count_taken}x`")
-            count_taken = 0
+    def authenticate_account(self) -> bool:
+        auth_result = login(self.email, self.password)
+        
+        if isinstance(auth_result, dict):
+            message = (
+                f"Successfully authenticated with username `{self.username}`!\n"
+                f"Bearer Token: `{auth_result['access_token']}`\n"
+                f"Learn more: <https://bearer.wiki>\n"
+                f"UUID: `{auth_result['uuid']}`"
+            )
+            self.send_discord_notification(message, mention_user=True)
+            self.claim_username(auth_result['access_token'])
+            return True
+        
+        error_message = f"Authentication failed for `{self.username}`: {auth_result}"
+        self.send_discord_notification(error_message, mention_user=True)
         return False
 
-    while True:
-        print(f"Checking availability for username: {username}")
-        status = is_username_available(username)
-        timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+    def claim_username(self, access_token: str) -> None:
+        url = f"{MINECRAFT_API_BASE}/minecraft/profile/name/{self.username}"
+        headers = {
+            'Authorization': f'Bearer {access_token}',
+            'Content-Type': 'application/json'
+        }
 
-        if status_handlers[status]():
-            break
+        status_messages = {
+            200: "Successfully claimed",
+            400: "Invalid request",
+            401: "Unauthorized (invalid access token)",
+            403: "Forbidden (username taken or cooldown)",
+            404: "Account does not own Minecraft",
+            405: "Method not allowed",
+            429: "Rate limit exceeded",
+            500: "Internal server error"
+        }
 
-        time.sleep(delay)
+        try:
+            response = requests.put(url, headers=headers)
+            status = status_messages.get(response.status_code, "Unexpected error")
+            message = f"`{self.username}`: {status}"
+            
+            if response.status_code != 200:
+                message = f"Failed to claim {message}"
+            
+            self.send_discord_notification(message, mention_user=True)
+        except requests.RequestException as e:
+            error_message = f"Error claiming username `{self.username}`: {e}"
+            self.send_discord_notification(error_message, mention_user=True)
+
+    def handle_taken_username(self, timestamp: str) -> bool:
+        self.count_taken += 1
+        if self.count_taken % self.message_group_size == 0:
+            self.send_discord_notification(
+                f"`[{timestamp}]` Username `{self.username}` is taken. `{self.count_taken}x`"
+            )
+            self.count_taken = 0
+        return False
+
+    def run(self) -> None:
+        while True:
+            timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
+            status = self.check_username_availability()
+
+            status_handlers: Dict[str, StatusHandler] = {
+                "ratelimited": lambda: self.send_discord_notification(
+                    f"`[{timestamp}]` Rate limited by Mojang API. Please wait."
+                ),
+                "error": lambda: self.send_discord_notification(
+                    f"`[{timestamp}]` Error checking username `{self.username}`."
+                ),
+                "available": lambda: self.authenticate_account(),
+                "taken": lambda: self.handle_taken_username(timestamp)
+            }
+
+            if status_handlers[status]():
+                break
+
+            time.sleep(self.delay)
+
+def main():
+    try:
+        config = MinecraftSniper.load_config()
+        required_keys = ["webhook_url", "user_id", "username", "email", "password"]
+        
+        if not all(key in config for key in required_keys):
+            print(f"Error: Missing required configuration in {CONFIG_FILE}")
+            return
+
+        sniper = MinecraftSniper(config)
+        sniper.run()
+    except Exception as e:
+        print(f"Fatal error: {e}")
 
 if __name__ == "__main__":
     main()
