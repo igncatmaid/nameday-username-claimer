@@ -5,9 +5,9 @@ This script automates the process of checking the availability of a Minecraft us
 ## Features
 
 - Check if a Minecraft username is available.
-- Authenticate using Microsoft credentials (requires the `MsAuth` module).
+- Authenticate using Microsoft credentials.
 - Claim the username if it's available.
-- Send notifications via Discord webhook on key events (e.g., successful authentication, rate limit, or errors).
+- Send notifications via Discord webhook on key events (successful authentication, rate limit, errors etc.).
 - Configurable delay and message grouping for notifications.
 
 ## Requirements
