@@ -16,6 +16,12 @@ DEFAULT_MESSAGE_GROUP_SIZE = 3
 ConfigType = Dict[str, Any]
 StatusHandler = Callable[[], bool]
 
+# Define ANSI escape codes for colors ONLY FOR CONSOLE
+RESET = '\033[0m'
+GREEN = '\033[32m'
+YELLOW = '\033[33m' #BOLD
+BLUE = '\033[34m'
+
 class MinecraftSniper:
     def __init__(self, config: ConfigType):
         self.webhook_url = config["webhook_url"]
@@ -26,6 +32,19 @@ class MinecraftSniper:
         self.delay = config.get("delay", DEFAULT_DELAY)
         self.message_group_size = config.get("message_group_size", DEFAULT_MESSAGE_GROUP_SIZE)
         self.count_taken = 0
+        print(
+            f"{YELLOW}THIS CLAIMER IS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED!{RESET}\n"
+            f"The Minecraft Sniper script has started running!\n"
+            f"Target Username: {self.username}\n"
+            f"Delay between checks: {self.delay} seconds"
+        )
+        self.send_discord_notification(
+            f"**THIS CLAIMER IS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED!**\n"
+            f"The Minecraft Sniper script has started running!\n"
+            f"Target Username: `{self.username}`\n"
+            f"Delay between checks: `{self.delay} seconds`"
+        )
+
 
     @staticmethod
     def load_config() -> ConfigType:
