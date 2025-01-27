@@ -1,5 +1,5 @@
 
-##⚠️ THIS IS NOT A REGULAR USERNAME CLAIMER, ITS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED
+## ⚠️ THIS IS NOT A REGULAR USERNAME CLAIMER, ITS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED
 # Nameday Username Claimer
 
 This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (on the day when unmigrated accounts are deleted).
