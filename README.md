@@ -13,7 +13,7 @@ This script automates the process of checking the availability of a Minecraft us
 
 ## Requirements
 
-- Python 3.7 or higher ( https://www.python.org/downloads/ )
+- Python 3.7 or higher ( https://apps.microsoft.com/detail/9nj46sx7x90p?hl=en-us&gl=AU&ocid=pdpshare or https://www.python.org/downloads/ )
 - `requests` library (can be installed using `install.bat`)
 
 ## Installation
