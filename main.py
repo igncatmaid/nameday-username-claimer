@@ -75,16 +75,22 @@ class MinecraftSniper:
         
         if isinstance(auth_result, dict):
             message = (
-                f"Successfully authenticated with username `{self.username}`!\n"
+                f"Successfully authenticated with username `{self.username}!`\n"
                 f"Bearer Token: `{auth_result['access_token']}`\n"
                 f"Learn more: <https://bearer.wiki>\n"
                 f"UUID: `{auth_result['uuid']}`"
+            )
+            print(
+                f"Successfully authenticated with username {self.username}!\n"
+                f"Bearer Token: {auth_result['access_token']}\n"
+                f"Learn more: <https://bearer.wiki>\n"
+                f"UUID: {auth_result['uuid']}"
             )
             self.send_discord_notification(message, mention_user=True)
             self.claim_username(auth_result['access_token'])
             return True
         
-        error_message = f"Authentication failed for `{self.username}`: {auth_result}"
+        error_message = f"Authentication failed for `{self.username}`: `{auth_result}`"
         self.send_discord_notification(error_message, mention_user=True)
         return False
 
@@ -109,17 +115,20 @@ class MinecraftSniper:
         try:
             response = requests.put(url, headers=headers)
             status = status_messages.get(response.status_code, "Unexpected error")
-            message = f"`{self.username}`: {status}"
+            message = f"`{self.username}`: `{status}`"
             
             if response.status_code != 200:
                 message = f"Failed to claim {message}"
             
             self.send_discord_notification(message, mention_user=True)
         except requests.RequestException as e:
-            error_message = f"Error claiming username `{self.username}`: {e}"
+            error_message = f"Error claiming username `{self.username}`: `{e}`"
             self.send_discord_notification(error_message, mention_user=True)
 
     def handle_taken_username(self, timestamp: str) -> bool:
+        print(
+            f"[{timestamp}] Username {self.username} is taken."
+        )
         self.count_taken += 1
         if self.count_taken % self.message_group_size == 0:
             self.send_discord_notification(
@@ -128,18 +137,31 @@ class MinecraftSniper:
             self.count_taken = 0
         return False
 
+    def handle_ratelimited(self, timestamp: str) -> bool:
+        print(
+            f"[{timestamp}] Rate limited by Mojang API. Please wait."
+        )
+        self.send_discord_notification(
+            f"`[{timestamp}]` Rate limited by Mojang API. Please wait.."
+        )
+        return False
+    def handle_error(self, timestamp: str) -> bool:
+        print(
+            f"[{timestamp}] Error checking username {self.username}."
+        )
+        self.send_discord_notification(
+            f"`[{timestamp}]` Error checking username `{self.username}`."
+        )
+        return False
+
     def run(self) -> None:
         while True:
             timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
             status = self.check_username_availability()
 
             status_handlers: Dict[str, StatusHandler] = {
-                "ratelimited": lambda: self.send_discord_notification(
-                    f"`[{timestamp}]` Rate limited by Mojang API. Please wait."
-                ),
-                "error": lambda: self.send_discord_notification(
-                    f"`[{timestamp}]` Error checking username `{self.username}`."
-                ),
+                "ratelimited": lambda: self.handle_ratelimited(timestamp),
+                "error": lambda: self.handle_error(timestamp),
                 "available": lambda: self.authenticate_account(),
                 "taken": lambda: self.handle_taken_username(timestamp)
             }
@@ -157,7 +179,6 @@ def main():
         if not all(key in config for key in required_keys):
             print(f"Error: Missing required configuration in {CONFIG_FILE}")
             return
-
         sniper = MinecraftSniper(config)
         sniper.run()
     except Exception as e:
