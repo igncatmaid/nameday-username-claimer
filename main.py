@@ -76,7 +76,7 @@ class MinecraftSniper:
         if isinstance(auth_result, dict):
             message = (
                 f"Successfully authenticated with username `{self.username}!`\n"
-                f"Bearer Token: `{auth_result['access_token']}`\n"
+                f"Bearer Token: ||`{auth_result['access_token']}`||\n"
                 f"Learn more: <https://bearer.wiki>\n"
                 f"UUID: `{auth_result['uuid']}`"
             )
