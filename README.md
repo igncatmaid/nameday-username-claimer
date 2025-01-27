@@ -2,6 +2,8 @@
 
 This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (on the day when unmigrated accounts are deleted).
 
+⚠️ THIS ISNT REGULAR USERNAME CLAIMER, ITS ONLY FOR DAY WHEN UNMIGRATED ACCOUNT GET DELETED ⚠️
+
 ## Features
 
 - Check if a Minecraft username is available.
