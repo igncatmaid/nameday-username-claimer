@@ -19,8 +19,9 @@ StatusHandler = Callable[[], bool]
 # Define ANSI escape codes for colors ONLY FOR CONSOLE
 RESET = '\033[0m'
 GREEN = '\033[32m'
-YELLOW = '\033[33m' #BOLD
+YELLOW = '\033[33m'
 BLUE = '\033[34m'
+PINK = '\033[1;35m'
 
 class MinecraftSniper:
     def __init__(self, config: ConfigType):
@@ -33,13 +34,36 @@ class MinecraftSniper:
         self.message_group_size = config.get("message_group_size", DEFAULT_MESSAGE_GROUP_SIZE)
         self.count_taken = 0
         print(
+            f" _____                                                _____ \n"
+            f"( ___ )                                              ( ___ )\n"
+            f" |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   | \n"
+            f" |   |{PINK}  ,---.          ,--.       ,--. ,---.          {RESET}|   | \n"
+            f" |   |{PINK} '   .-' ,--,--, `--' ,---. `--'/  .-',--. ,--. {RESET}|   | \n"
+            f" |   |{PINK} `.  `-. |      \,--.| .-. |,--.|  `-, \  '  /  {RESET}|   | \n"
+            f" |   |{PINK} .-'    ||  ||  ||  || '-' '|  ||  .-'  \   '   {RESET}|   | \n"
+            f" |   |{PINK} `-----' `--''--'`--'|  |-' `--'`--'  .-'  /    {RESET}|   | \n"
+            f" |   |{PINK}                     `--'             `---'     {RESET}|   | \n"
+            f" |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___| \n"
+            f"(_____)                                              (_____)\n"
             f"{YELLOW}THIS CLAIMER IS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED!{RESET}\n"
             f"The Minecraft Sniper script has started running!\n"
             f"Target Username: {self.username}\n"
             f"Delay between checks: {self.delay} seconds"
         )
         self.send_discord_notification(
+            f" ``` _____                                                _____ \n"
+            f"( ___ )                                              ( ___ )\n"
+            f" |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   | \n"
+            f" |   |  ,---.          ,--.       ,--. ,---.          |   | \n"
+            f" |   | '   .-' ,--,--, `--' ,---. `--'/  .-',--. ,--. |   | \n"
+            f" |   | `.  `-. |      \,--.| .-. |,--.|  `-, \  '  /  |   | \n"
+            f" |   | .-'    ||  ||  ||  || '-' '|  ||  .-'  \   '   |   | \n"
+            f" |   | `-----' `--''--'`--'|  |-' `--'`--'  .-'  /    |   | \n"
+            f" |   |                     `--'             `---'     |   | \n"
+            f" |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___| \n"
+            f"(_____)                                              (_____)```\n"
             f"**THIS CLAIMER IS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED!**\n"
+            f"<@{self.user_id}>\n"
             f"The Minecraft Sniper script has started running!\n"
             f"Target Username: `{self.username}`\n"
             f"Delay between checks: `{self.delay} seconds`"
