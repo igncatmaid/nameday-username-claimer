@@ -1,3 +1,3 @@
 echo Starting the Script...
-python main.py
+python3 main.py
 pause
