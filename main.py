@@ -35,6 +35,7 @@ def debug_log(message: str, level: str = "INFO"):
     }
     color = level_colors.get(level, RESET)
     print(f"{color}{timestamp} {level}: {message}{RESET}")
+
 class MinecraftSniper:
     def __init__(self, config: ConfigType):
         self.webhook_url = config["webhook_url"]
@@ -44,7 +45,13 @@ class MinecraftSniper:
         self.password = config["password"]
         self.delay = config.get("delay", DEFAULT_DELAY)
         self.message_group_size = config.get("message_group_size", DEFAULT_MESSAGE_GROUP_SIZE)
+        
+        # Bearer token and timing
         self.access_token = None
+        self.last_auth_time = 0.0
+        # Refresh the bearer token every 12 hours (43200 seconds)
+        self.token_refresh_interval = 12 * 60 * 60
+
         self.batch_logs = []
 
         print(
@@ -133,20 +140,27 @@ class MinecraftSniper:
         except requests.RequestException:
             return "error"
 
-    def authenticate_account(self) -> bool:
-        if self.access_token:
-            return True  # Skip re-authentication if already authenticated
+    def authenticate_account(self, force: bool = False) -> bool:
+        """
+        Authenticates the Mojang/Microsoft account.
+        If 'force' is True, we always re-authenticate even if we already have a token.
+        Otherwise, we only re-auth if we have no token or if it's past the refresh interval.
+        """
+        # If not forced, check if we already have a valid token
+        if not force and self.access_token and (time.time() - self.last_auth_time < self.token_refresh_interval):
+            return True
 
         auth_result = login(self.email, self.password)
 
-        if isinstance(auth_result, dict):
+        if isinstance(auth_result, dict) and 'access_token' in auth_result:
             self.access_token = auth_result['access_token']
+            self.last_auth_time = time.time()  # Record time of successful auth
             embed = self.generate_embed(
                 title="Authentication Success",
                 description=(
-                    f"Successfully authenticated with username `{auth_result['username']}`\n"
+                    f"Successfully authenticated with username `{auth_result.get('username', 'unknown')}`\n"
                     f"Bearer Token: ||`{auth_result['access_token']}`||\n"
-                    f"UUID: `{auth_result['uuid']}`"
+                    f"UUID: `{auth_result.get('uuid', 'unknown')}`"
                 ),
                 color=0x00b0f4
             )
@@ -200,10 +214,9 @@ class MinecraftSniper:
                 debug_log(f"Successfully claimed username {self.username}", "SUCCESS")
                 self.send_discord_notification(embed=embed)
 
-            # Using _handle_status for batch logging
             self._handle_status(
                 datetime.now().strftime("%H:%M:%S"),
-                status_messages.get(response.status_code, "Unexpected error"),
+                status,
                 "SUCCESS" if response.status_code == 200 else "WARNING",
                 0x6a0dad if response.status_code == 200 else 0xffa500
             )
@@ -259,13 +272,19 @@ class MinecraftSniper:
 
     def run(self) -> None:
         while True:
+            if (not self.access_token) or (time.time() - self.last_auth_time > self.token_refresh_interval):
+                debug_log("Re-authenticating because the token is missing or older than 12 hours.", "INFO")
+                if not self.authenticate_account(force=True):
+                    time.sleep(self.delay)
+                    continue
+
             timestamp = datetime.now().strftime("%H:%M:%S.%f")[:-3]
             status = self.check_username_availability()
 
             status_handlers: Dict[str, StatusHandler] = {
                 "ratelimited": lambda: self.handle_ratelimited(timestamp),
                 "error": lambda: self.handle_error(timestamp),
-                "available": lambda: self.authenticate_account() and self.claim_username(),
+                "available": lambda: self.claim_username(),
                 "taken": lambda: self.handle_taken_username(timestamp)
             }
 
