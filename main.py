@@ -9,7 +9,7 @@ from MsAuth import login
 CONFIG_FILE = "config.json"
 MOJANG_API_BASE = "https://api.mojang.com"
 MINECRAFT_API_BASE = "https://api.minecraftservices.com"
-DEFAULT_DELAY = 5
+DEFAULT_DELAY = 30
 DEFAULT_MESSAGE_GROUP_SIZE = 3
 
 # Type aliases
@@ -233,7 +233,7 @@ class MinecraftSniper:
 
     def _handle_status(self, timestamp: str, message: str, log_level: str, color: int) -> bool:
         debug_log(f"[{timestamp}] {message}", log_level)
-        self.batch_logs.append(f"Attempt to claim {self.username}: {message}")
+        self.batch_logs.append(f"[{timestamp}] Attempt to claim {self.username}: {message}")
 
         if len(self.batch_logs) >= self.message_group_size:
             self.send_discord_notification(
