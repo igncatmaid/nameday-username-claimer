@@ -164,7 +164,7 @@ class MinecraftSniper:
                 ),
                 color=0x00b0f4
             )
-            debug_log(f"Authentication successful for username {self.username}", "SUCCESS")
+            debug_log(f"Authentication successful for username {auth_result['username']}", "SUCCESS")
             self.send_discord_notification(embed=embed)
             return True
 
