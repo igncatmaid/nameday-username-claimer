@@ -22,7 +22,19 @@ GREEN = '\033[32m'
 YELLOW = '\033[33m'
 BLUE = '\033[34m'
 PINK = '\033[1;35m'
+RED = '\033[31m'
 
+# Utility function for colored logs
+def debug_log(message: str, level: str = "INFO"):
+    timestamp = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    level_colors = {
+        "INFO": BLUE,
+        "SUCCESS": GREEN,
+        "WARNING": YELLOW,
+        "ERROR": RED
+    }
+    color = level_colors.get(level, RESET)
+    print(f"{color}{timestamp} {level}: {message}{RESET}")
 class MinecraftSniper:
     def __init__(self, config: ConfigType):
         self.webhook_url = config["webhook_url"]
@@ -32,15 +44,17 @@ class MinecraftSniper:
         self.password = config["password"]
         self.delay = config.get("delay", DEFAULT_DELAY)
         self.message_group_size = config.get("message_group_size", DEFAULT_MESSAGE_GROUP_SIZE)
-        self.count_taken = 0
+        self.access_token = None
+        self.batch_logs = []
+
         print(
             f" _____                                                _____ \n"
             f"( ___ )                                              ( ___ )\n"
             f" |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   | \n"
             f" |   |{PINK}  ,---.          ,--.       ,--. ,---.          {RESET}|   | \n"
             f" |   |{PINK} '   .-' ,--,--, `--' ,---. `--'/  .-',--. ,--. {RESET}|   | \n"
-            f" |   |{PINK} `.  `-. |      \,--.| .-. |,--.|  `-, \  '  /  {RESET}|   | \n"
-            f" |   |{PINK} .-'    ||  ||  ||  || '-' '|  ||  .-'  \   '   {RESET}|   | \n"
+            f" |   |{PINK} `.  `-. |      \\,--.| .-. |,--.|  `-, \\  '  /  {RESET}|   | \n"
+            f" |   |{PINK} .-'    ||  ||  ||  || '-' '|  ||  .-'  \\   '   {RESET}|   | \n"
             f" |   |{PINK} `-----' `--''--'`--'|  |-' `--'`--'  .-'  /    {RESET}|   | \n"
             f" |   |{PINK}                     `--'             `---'     {RESET}|   | \n"
             f" |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___| \n"
@@ -50,25 +64,16 @@ class MinecraftSniper:
             f"Target Username: {self.username}\n"
             f"Delay between checks: {self.delay} seconds"
         )
+        debug_log("The Minecraft Sniper script has started running!", "SUCCESS")
+        debug_log(f"Target Username: {self.username}", "INFO")
+        debug_log(f"Delay between checks: {self.delay} seconds", "INFO")
         self.send_discord_notification(
-            f" ``` _____                                                _____ \n"
-            f"( ___ )                                              ( ___ )\n"
-            f" |   |~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|   | \n"
-            f" |   |  ,---.          ,--.       ,--. ,---.          |   | \n"
-            f" |   | '   .-' ,--,--, `--' ,---. `--'/  .-',--. ,--. |   | \n"
-            f" |   | `.  `-. |      \,--.| .-. |,--.|  `-, \  '  /  |   | \n"
-            f" |   | .-'    ||  ||  ||  || '-' '|  ||  .-'  \   '   |   | \n"
-            f" |   | `-----' `--''--'`--'|  |-' `--'`--'  .-'  /    |   | \n"
-            f" |   |                     `--'             `---'     |   | \n"
-            f" |___|~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~|___| \n"
-            f"(_____)                                              (_____)```\n"
-            f"**THIS CLAIMER IS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED!**\n"
-            f"<@{self.user_id}>\n"
-            f"The Minecraft Sniper script has started running!\n"
-            f"Target Username: `{self.username}`\n"
-            f"Delay between checks: `{self.delay} seconds`"
+            embed=self.generate_embed(
+                title="Script Started",
+                description=f"Target Username: `{self.username}`\nDelay: `{self.delay} seconds`",
+                color=0x6a0dad
+            )
         )
-
 
     @staticmethod
     def load_config() -> ConfigType:
@@ -80,11 +85,8 @@ class MinecraftSniper:
         except json.JSONDecodeError:
             raise ValueError(f"Invalid JSON in {CONFIG_FILE}")
 
-    def send_discord_notification(self, message: str, mention_user: bool = False) -> None:
-        if mention_user:
-            message = f"<@{self.user_id}> {message}"
-
-        payload = {"content": message}
+    def send_discord_notification(self, embed: Dict[str, Any] = None) -> None:
+        payload = {"content": "", "embeds": [embed] if embed else []}
         headers = {"Content-Type": "application/json"}
 
         try:
@@ -94,13 +96,31 @@ class MinecraftSniper:
                 headers=headers
             )
             if response.status_code != 204:
-                print(f"Failed to send notification: {response.status_code}, {response.text}")
+                debug_log(f"Failed to send notification: {response.status_code}, {response.text}", "ERROR")
         except requests.RequestException as e:
-            print(f"Error sending Discord notification: {e}")
+            debug_log(f"Error sending Discord notification: {e}", "ERROR")
+
+    def generate_embed(self, title: str, description: str, color: int, timestamp: bool = True) -> Dict[str, Any]:
+        embed = {
+            "author": {
+                "name": "Info",
+                "icon_url": "https://avatars.githubusercontent.com/u/196719707?s=1000&v=4",
+                "url": "https://github.com/snipify"
+            },
+            "title": title,
+            "description": description,
+            "color": color,
+            "footer": {
+                "text": "Namesnatcher - Minecraft Nameday Sniper",
+            }
+        }
+        if timestamp:
+            embed["timestamp"] = datetime.now().isoformat()
+        return embed
 
     def check_username_availability(self) -> str:
         url = f"{MOJANG_API_BASE}/users/profiles/minecraft/{self.username}"
-        
+
         try:
             response = requests.get(url)
             status_map = {
@@ -114,33 +134,44 @@ class MinecraftSniper:
             return "error"
 
     def authenticate_account(self) -> bool:
+        if self.access_token:
+            return True  # Skip re-authentication if already authenticated
+
         auth_result = login(self.email, self.password)
-        
+
         if isinstance(auth_result, dict):
-            message = (
-                f"Successfully authenticated with username `{self.username}!`\n"
-                f"Bearer Token: ||`{auth_result['access_token']}`||\n"
-                f"Learn more: <https://bearer.wiki>\n"
-                f"UUID: `{auth_result['uuid']}`"
+            self.access_token = auth_result['access_token']
+            embed = self.generate_embed(
+                title="Authentication Success",
+                description=(
+                    f"Successfully authenticated with username `{auth_result['username']}`\n"
+                    f"Bearer Token: ||`{auth_result['access_token']}`||\n"
+                    f"UUID: `{auth_result['uuid']}`"
+                ),
+                color=0x00b0f4
             )
-            print(
-                f"Successfully authenticated with username {self.username}!\n"
-                f"Bearer Token: {auth_result['access_token']}\n"
-                f"Learn more: <https://bearer.wiki>\n"
-                f"UUID: {auth_result['uuid']}"
-            )
-            self.send_discord_notification(message, mention_user=True)
-            self.claim_username(auth_result['access_token'])
+            debug_log(f"Authentication successful for username {self.username}", "SUCCESS")
+            self.send_discord_notification(embed=embed)
             return True
-        
-        error_message = f"Authentication failed for `{self.username}`: `{auth_result}`"
-        self.send_discord_notification(error_message, mention_user=True)
+
+        debug_log(f"Authentication failed for username {self.username}: {auth_result}", "ERROR")
+        self.send_discord_notification(
+            embed=self.generate_embed(
+                title="Authentication Failed",
+                description=f"Error: {auth_result}",
+                color=0xff0000
+            )
+        )
         return False
 
-    def claim_username(self, access_token: str) -> None:
+    def claim_username(self) -> None:
+        if not self.access_token:
+            debug_log("Cannot claim username without authentication.", "ERROR")
+            return
+
         url = f"{MINECRAFT_API_BASE}/minecraft/profile/name/{self.username}"
         headers = {
-            'Authorization': f'Bearer {access_token}',
+            'Authorization': f'Bearer {self.access_token}',
             'Content-Type': 'application/json'
         }
 
@@ -158,44 +189,73 @@ class MinecraftSniper:
         try:
             response = requests.put(url, headers=headers)
             status = status_messages.get(response.status_code, "Unexpected error")
-            message = f"`{self.username}`: `{status}`"
-            
-            if response.status_code != 200:
-                message = f"Failed to claim {message}"
-            
-            self.send_discord_notification(message, mention_user=True)
+
+            embed = self.generate_embed(
+                title="Claim Username",
+                description=f"Attempt to claim `{self.username}`: {status}",
+                color=0x6a0dad if response.status_code == 200 else 0xffa500
+            )
+
+            if response.status_code == 200:
+                debug_log(f"Successfully claimed username {self.username}", "SUCCESS")
+                self.send_discord_notification(embed=embed)
+
+            # Using _handle_status for batch logging
+            self._handle_status(
+                datetime.now().strftime("%H:%M:%S"),
+                status_messages.get(response.status_code, "Unexpected error"),
+                "SUCCESS" if response.status_code == 200 else "WARNING",
+                0x6a0dad if response.status_code == 200 else 0xffa500
+            )
+
         except requests.RequestException as e:
-            error_message = f"Error claiming username `{self.username}`: `{e}`"
-            self.send_discord_notification(error_message, mention_user=True)
+            debug_log(f"Error claiming username {self.username}: {e}", "ERROR")
+            self.send_discord_notification(
+                embed=self.generate_embed(
+                    title="Error Claiming Username",
+                    description=f"Error: {e}",
+                    color=0xff0000
+                )
+            )
+
+    def _handle_status(self, timestamp: str, message: str, log_level: str, color: int) -> bool:
+        debug_log(f"[{timestamp}] {message}", log_level)
+        self.batch_logs.append(f"Attempt to claim {self.username}: {message}")
+
+        if len(self.batch_logs) >= self.message_group_size:
+            self.send_discord_notification(
+                embed=self.generate_embed(
+                    title="Batch Update",
+                    description="\n".join(self.batch_logs),
+                    color=color
+                )
+            )
+            self.batch_logs.clear()
+        return False
 
     def handle_taken_username(self, timestamp: str) -> bool:
-        print(
-            f"[{timestamp}] Username {self.username} is taken."
+        return self._handle_status(
+            timestamp,
+            "Username is taken.",
+            "INFO",
+            0xffa500
         )
-        self.count_taken += 1
-        if self.count_taken % self.message_group_size == 0:
-            self.send_discord_notification(
-                f"`[{timestamp}]` Username `{self.username}` is taken. `{self.count_taken}x`"
-            )
-            self.count_taken = 0
-        return False
 
     def handle_ratelimited(self, timestamp: str) -> bool:
-        print(
-            f"[{timestamp}] Rate limited by Mojang API. Please wait."
+        return self._handle_status(
+            timestamp,
+            "Rate limited by Mojang API. Please wait.",
+            "WARNING",
+            0xffa500
         )
-        self.send_discord_notification(
-            f"`[{timestamp}]` Rate limited by Mojang API. Please wait.."
-        )
-        return False
+
     def handle_error(self, timestamp: str) -> bool:
-        print(
-            f"[{timestamp}] Error checking username {self.username}."
+        return self._handle_status(
+            timestamp,
+            "Error checking username.",
+            "ERROR",
+            0xff0000
         )
-        self.send_discord_notification(
-            f"`[{timestamp}]` Error checking username `{self.username}`."
-        )
-        return False
 
     def run(self) -> None:
         while True:
@@ -205,12 +265,11 @@ class MinecraftSniper:
             status_handlers: Dict[str, StatusHandler] = {
                 "ratelimited": lambda: self.handle_ratelimited(timestamp),
                 "error": lambda: self.handle_error(timestamp),
-                "available": lambda: self.authenticate_account(),
+                "available": lambda: self.authenticate_account() and self.claim_username(),
                 "taken": lambda: self.handle_taken_username(timestamp)
             }
 
-            if status_handlers[status]():
-                break
+            status_handlers[status]()
 
             time.sleep(self.delay)
 
@@ -218,14 +277,15 @@ def main():
     try:
         config = MinecraftSniper.load_config()
         required_keys = ["webhook_url", "user_id", "username", "email", "password"]
-        
+
         if not all(key in config for key in required_keys):
-            print(f"Error: Missing required configuration in {CONFIG_FILE}")
+            debug_log(f"Error: Missing required configuration in {CONFIG_FILE}", "ERROR")
             return
+
         sniper = MinecraftSniper(config)
         sniper.run()
     except Exception as e:
-        print(f"Fatal error: {e}")
+        debug_log(f"Fatal error: {e}", "ERROR")
 
 if __name__ == "__main__":
     main()
