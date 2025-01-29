@@ -88,8 +88,12 @@ class MinecraftSniper:
             with open(CONFIG_FILE, "r") as file:
                 return json.load(file)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Configuration file {CONFIG_FILE} not found")
+            print(f"Configuration file {CONFIG_FILE} not found")
+            input("Press Enter to exit...")
+            raise FileNotFoundError(f"Configuration file {CONFIG_FILE} not found")            
         except json.JSONDecodeError:
+            print(f"Invalid JSON in {CONFIG_FILE}")
+            input("Press Enter to exit...")
             raise ValueError(f"Invalid JSON in {CONFIG_FILE}")
 
     def send_discord_notification(self, embed: Dict[str, Any] = None) -> None:
