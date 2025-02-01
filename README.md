@@ -2,6 +2,10 @@
 ## ⚠️ THIS IS NOT A REGULAR USERNAME CLAIMER, ITS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED
 # Nameday Username Claimer
 
+<p align="center">
+  <a href="https://discord.gg/invite/sb2hBvDeDk"><img src="https://discordapp.com/api/guilds/1333833653741944913/widget.png?style=banner2" alt="Discord server"></a>
+</p>
+
 This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (on the day when unmigrated accounts are deleted).
 
 ## Features
