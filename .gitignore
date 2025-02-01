@@ -5,3 +5,5 @@ dist/
 build/
 .env
 *.spec
+namesnatcher-win-amd64.*
+namesnatcher-win-amd64
