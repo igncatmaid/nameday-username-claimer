@@ -1,10 +1,9 @@
 
-## ⚠️ THIS IS NOT A REGULAR USERNAME CLAIMER, ITS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED
 # Nameday Username Claimer
 
-<p align="center">
-  <a href="https://discord.gg/invite/sb2hBvDeDk"><img src="https://discordapp.com/api/guilds/1333833653741944913/widget.png?style=banner2" alt="Discord server"></a>
-</p>
+## ⚠️ THIS IS NOT A REGULAR USERNAME CLAIMER, ITS ONLY FOR WHEN UNMIGRATED ACCOUNTS GET DELETED
+
+[![Discord server](https://discordapp.com/api/guilds/1333833653741944913/widget.png?style=banner2)](https://discord.gg/invite/sb2hBvDeDk)
 
 This script automates the process of checking the availability of a Minecraft username and claiming it when usernames are freed (on the day when unmigrated accounts are deleted).
 
@@ -18,7 +17,7 @@ This script automates the process of checking the availability of a Minecraft us
 
 ## Requirements
 
-- Python 3.7 or higher ( https://apps.microsoft.com/detail/9nj46sx7x90p?hl=en-us&gl=AU&ocid=pdpshare or https://www.python.org/downloads/ )
+- Python 3.7 or higher ( <https://apps.microsoft.com/detail/9nj46sx7x90p?hl=en-us&gl=AU&ocid=pdpshare> or <https://www.python.org/downloads/> )
 - `requests` library (can be installed using `install.bat`)
 
 ## Installation
