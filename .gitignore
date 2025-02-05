@@ -2,6 +2,8 @@ __pycache__/
 .venv/
 output/
 dist/
+*.dist/
+*build/
 build/
 .env
 *.spec
