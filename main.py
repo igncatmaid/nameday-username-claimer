@@ -1,3 +1,4 @@
+from os import system
 import time
 import requests
 import json
@@ -89,11 +90,11 @@ class MinecraftSniper:
                 return json.load(file)
         except FileNotFoundError:
             print(f"Configuration file {CONFIG_FILE} not found")
-            input("Press Enter to exit...")
+            system("pause")
             raise FileNotFoundError(f"Configuration file {CONFIG_FILE} not found")            
         except json.JSONDecodeError:
             print(f"Invalid JSON in {CONFIG_FILE}")
-            input("Press Enter to exit...")
+            system("pause")
             raise ValueError(f"Invalid JSON in {CONFIG_FILE}")
 
     def send_discord_notification(self, embed: Dict[str, Any] = None) -> None:
@@ -116,7 +117,7 @@ class MinecraftSniper:
             "author": {
                 "name": "Info",
                 "icon_url": "https://avatars.githubusercontent.com/u/196719707?s=1000&v=4",
-                "url": "https://github.com/snipify"
+                "url": "https://snipify.name"
             },
             "title": title,
             "description": description,

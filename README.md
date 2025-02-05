@@ -20,6 +20,14 @@ This script automates the process of checking the availability of a Minecraft us
 - Python 3.7 or higher ( <https://apps.microsoft.com/detail/9nj46sx7x90p?hl=en-us&gl=AU&ocid=pdpshare> or <https://www.python.org/downloads/> )
 - `requests` library (can be installed using `install.bat`)
 
+## How to compile yourself
+
+If you don't trust the builds from the release tab, you can compile it yourself by using PyInstaller:
+
+```powershell
+pyinstaller --noconfirm --onefile --console --icon .\public\icon.ico --name "Namesnatcher" --clean main.py
+```
+
 ## Installation
 
 1. Clone or download this repository to your local machine.
